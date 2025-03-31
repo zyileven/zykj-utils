@@ -25,6 +25,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "repository": {
+    "url": "https://github.com/zyileven/zykj-utils"
+  },
   "license": "ISC",
   "devDependencies": {
     "typescript": "^5.0.0"
