@@ -2,15 +2,18 @@
  * 网络请求工具函数
  */
 
-interface RequestOptions extends RequestInit {
-    timeout?: number;
-}
-
-interface ResponseData<T = any> {
-    data: T;
-    status: number;
-    statusText: string;
-    headers: Headers;
+/**
+ * @description 请求错误类型
+ */
+class RequestError extends Error {
+    constructor(
+        message: string,
+        public status?: number,
+        public statusText?: string
+    ) {
+        super(message);
+        this.name = 'RequestError';
+    }
 }
 
 /**
@@ -47,6 +50,17 @@ const withTimeout = <T>(promise: Promise<T>, timeout: number): Promise<T> => {
     });
 };
 
+interface RequestOptions extends RequestInit {
+    timeout?: number;
+}
+
+interface ResponseData<T = any> {
+    data: T;
+    status: number;
+    statusText: string;
+    headers: Headers;
+}
+
 /**
  * @description 封装的fetch请求
  * @param url 请求URL
@@ -78,7 +92,11 @@ export const request = async <T = any>(
         const response = await withTimeout(fetchPromise, timeout);
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            throw new RequestError(
+                `HTTP error! status: ${response.status}`,
+                response.status,
+                response.statusText
+            );
         }
 
         const data = await response.json();
@@ -90,10 +108,13 @@ export const request = async <T = any>(
             headers: response.headers,
         };
     } catch (error) {
-        if (error instanceof TimeoutError) {
+        if (error instanceof TimeoutError || error instanceof RequestError) {
             throw error;
         }
-        throw new Error(`Request failed: ${error.message}`);
+        if (error instanceof Error) {
+            throw new RequestError(error.message);
+        }
+        throw new RequestError('An unknown error occurred');
     }
 };
 
